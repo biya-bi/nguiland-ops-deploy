@@ -81,10 +81,6 @@ deploy() {
   # Ensure the registry is functionally ready to receive image and OCI pushes.
   ensure_helm_release_ready "${namespace}" "${jcr_release_name}" "15m"
 
-  # Ensure the OSS binary repository is functionally ready if it is
-  # deployed in this environment (local/int).
-  ensure_helm_release_ready "${namespace}" "${oss_release_name}" "15m" "true"
-
   local docker_build_manifest_path="infra/docker/build.yaml"
   local oci_publish_manifest_path="infra/oci/publish.yaml"
 
@@ -108,6 +104,11 @@ deploy() {
   fi
 
   run_docker_build_pipeline "${namespace}" "${docker_build_manifest_path}"
+
+  # Ensure the OSS release is functionally ready if it is deployed in this
+  # environment (local/int).
+  ensure_helm_release_ready "${namespace}" "${oss_release_name}" "15m" "true"
+
   run_oci_publish_pipeline "${namespace}" "${oci_publish_manifest_path}"
   wait_for_helmrepository_exists "${namespace}" "artifactory-oci" "10m"
 
