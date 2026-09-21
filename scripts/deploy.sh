@@ -57,7 +57,7 @@ deploy() {
   local line
   while IFS= read -r line || [[ -n "$line" ]]; do
     addons+=("$line")
-  done < <(get_dependent_helmreleases "${namespace}" "${jcr_release_name}" "${oss_release_name}")
+  done < <(get_dependent_helmreleases "${namespace}" "${jcr_release_name}")
 
   if [[ ${#addons[@]} -gt 0 ]]; then
     suspend_helmreleases "${namespace}" "${addons[@]}"
@@ -110,6 +110,14 @@ deploy() {
   ensure_helm_release_ready "${namespace}" "${oss_release_name}" "15m" "true"
 
   run_oci_publish_pipeline "${namespace}" "${oci_publish_manifest_path}"
+
+  # Resume dependent releases after artifactory-jcr is ready and the
+  # helm-chart-oci-publish pipeline succeeded so that dependents that
+  # pull their Helm charts from artifactory-jcr can pull them successfully.
+  if [[ ${#addons[@]} -gt 0 ]]; then
+    resume_helmreleases "${namespace}" "${addons[@]}"
+  fi
+
   wait_for_helmrepository_exists "${namespace}" "artifactory-oci" "10m"
 
   # Ensure the git-event-listener release is ready.
