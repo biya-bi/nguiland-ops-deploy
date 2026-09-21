@@ -62,8 +62,6 @@ deploy() {
   if [[ ${#addons[@]} -gt 0 ]]; then
     suspend_helmreleases "${namespace}" "${addons[@]}"
     trap "resume_helmreleases ${namespace} ${addons[*]:-} || true; cleanup_terminal" EXIT
-  else
-    trap 'cleanup_terminal' EXIT
   fi
 
   # Ensure the internal chart repository is ready before the JCR registry (artifactory-jcr).
