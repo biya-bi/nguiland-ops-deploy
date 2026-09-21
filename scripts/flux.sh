@@ -26,6 +26,14 @@ wait_for_helmrelease() {
   wait_for_resource "${1}" "helmrelease" "${2}" "condition=Ready" "${3:-5m}"
 }
 
+wait_for_kustomization_exists() {
+  wait_for_resource "${1}" "kustomization" "${2}" "exists" "${3:-10m}"
+}
+
+wait_for_kustomization() {
+  wait_for_resource "${1}" "kustomization" "${2}" "condition=Ready" "${3:-5m}"
+}
+
 reconcile_resource() {
   local namespace="${1}"
   local resource_type="${2}"
@@ -54,6 +62,10 @@ reconcile_helm_repository() {
 
 reconcile_git_repository() {
   reconcile_resource "${1}" "gitrepository" "${2}"
+}
+
+reconcile_kustomization() {
+  reconcile_resource "${1}" "kustomization" "${2}"
 }
 
 ensure_git_repository_ready() {
@@ -87,6 +99,34 @@ ensure_helm_release_ready() {
 
   reconcile_helm_release "${namespace}" "${release_name}"
   wait_for_helmrelease "${namespace}" "${release_name}" "${timeout}"
+}
+
+ensure_kustomization_ready() {
+  local namespace="${1}"
+  local kustomization_name="${2}"
+  local timeout="${3:-10m}"
+  local optional="${4:-false}"
+
+  if [[ "${timeout}" == "true" || "${timeout}" == "false" ]]; then
+    optional="${timeout}"
+    timeout="10m"
+  fi
+
+  if [[ "${optional}" == "true" ]]; then
+    if ! kubectl get kustomization "${kustomization_name}" -n "${namespace}" >/dev/null 2>&1; then
+      # If the Kustomization is optional and not found immediately, give Flux a short
+      # window to materialize the resource before assuming it is excluded.
+      if ! wait_for_kustomization_exists "${namespace}" "${kustomization_name}" "1m"; then
+        log_info "Optional Kustomization ${kustomization_name} was not discovered. Skipping..."
+        return 0
+      fi
+    fi
+  else
+    wait_for_kustomization_exists "${namespace}" "${kustomization_name}" "${timeout}"
+  fi
+
+  reconcile_kustomization "${namespace}" "${kustomization_name}"
+  wait_for_kustomization "${namespace}" "${kustomization_name}" "${timeout}"
 }
 
 suspend_helmreleases() {

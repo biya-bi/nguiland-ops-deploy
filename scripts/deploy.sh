@@ -112,6 +112,21 @@ deploy() {
   run_oci_publish_pipeline "${namespace}" "${oci_publish_manifest_path}"
   wait_for_helmrepository_exists "${namespace}" "artifactory-oci" "10m"
 
+  # Ensure the git-event-listener release is ready.
+  ensure_helm_release_ready "${namespace}" "git-event-listener" "15m" "true"
+
+  # Ensure the common kustomization is ready.
+  ensure_kustomization_ready "${namespace}" "common"
+
+  # Ensure the nats kustomization is ready.
+  ensure_kustomization_ready "${namespace}" "nats" "15m" "true"
+
+  # Ensure the optional-streams kustomization is ready.
+  ensure_kustomization_ready "${namespace}" "optional-streams" "15m" "true"
+
+  # Ensure the optional-git-repositories kustomization is ready.
+  ensure_kustomization_ready "${namespace}" "optional-git-repositories" "15m" "true"
+
   if [[ "$port_forward_enabled" == "true" ]]; then
     "${scripts_dir}/port-forward.sh" "${namespace}"
   fi
