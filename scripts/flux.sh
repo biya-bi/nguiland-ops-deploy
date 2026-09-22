@@ -137,11 +137,19 @@ suspend_helmreleases() {
   [[ $# -eq 0 ]] && return 0
 
   local release_name
+  local suspended
   for release_name in "$@"; do
     # Guard against empty strings/whitespace passed as arguments
     [[ -z "${release_name// /}" ]] && continue
 
     wait_for_helmrelease_exists "${namespace}" "${release_name}" "10m"
+
+    suspended=$(kubectl get helmrelease "${release_name}" -n "${namespace}" -o jsonpath='{.spec.suspend}')
+    if [[ "${suspended}" == "true" ]]; then
+      log_info "HelmRelease ${release_name} is already suspended. Skipping..."
+      continue
+    fi
+
     log_info "Suspending HelmRelease ${release_name} in namespace ${namespace}"
     toggle_resource_suspension "${namespace}" "helmrelease" "${release_name}" "true"
   done
@@ -155,9 +163,16 @@ resume_helmreleases() {
   [[ $# -eq 0 ]] && return 0
 
   local release_name
+  local suspended
   for release_name in "$@"; do
     # Guard against empty strings/whitespace passed as arguments
     [[ -z "${release_name// /}" ]] && continue
+
+    suspended=$(kubectl get helmrelease "${release_name}" -n "${namespace}" -o jsonpath='{.spec.suspend}')
+    if [[ "${suspended}" != "true" ]]; then
+      log_info "HelmRelease ${release_name} is already resumed. Skipping..."
+      continue
+    fi
 
     log_info "Resuming HelmRelease ${release_name} in namespace ${namespace}"
     toggle_resource_suspension "${namespace}" "helmrelease" "${release_name}" "false"
