@@ -102,12 +102,9 @@ deploy() {
   fi
 
   run_docker_build_pipeline "${namespace}" "${docker_build_manifest_path}"
-
-  # Ensure the OSS release is functionally ready if it is deployed in this
-  # environment (local/int).
-  ensure_helm_release_ready "${namespace}" "${oss_release_name}" "15m" "true"
-
   run_oci_publish_pipeline "${namespace}" "${oci_publish_manifest_path}"
+
+  wait_for_helmrepository_exists "${namespace}" "artifactory-oci" "10m"
 
   # Resume dependent releases after artifactory-jcr is ready and the
   # helm-chart-oci-publish pipeline succeeded so that dependents that
@@ -116,7 +113,9 @@ deploy() {
     resume_helmreleases "${namespace}" "${addons[@]}"
   fi
 
-  wait_for_helmrepository_exists "${namespace}" "artifactory-oci" "10m"
+  # Ensure the OSS release is functionally ready if it is deployed in this
+  # environment (local/int).
+  ensure_helm_release_ready "${namespace}" "${oss_release_name}" "15m" "true"
 
   # Ensure the git-event-listener release is ready.
   ensure_helm_release_ready "${namespace}" "git-event-listener" "15m" "true"
