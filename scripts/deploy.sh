@@ -53,15 +53,15 @@ deploy() {
   # materialized the internal HelmChart proxy objects.
   ensure_git_repository_ready "${namespace}" "${chart_git_repo_name}" "10m"
 
-  local addons=()
+  local jcr_dependent_releases=()
   local line
   while IFS= read -r line || [[ -n "$line" ]]; do
-    addons+=("$line")
+    jcr_dependent_releases+=("$line")
   done < <(get_dependent_helmreleases "${namespace}" "${jcr_release_name}")
 
-  if [[ ${#addons[@]} -gt 0 ]]; then
-    suspend_helmreleases "${namespace}" "${addons[@]}"
-    trap "resume_helmreleases ${namespace} ${addons[*]:-} || true; cleanup_terminal" EXIT
+  if [[ ${#jcr_dependent_releases[@]} -gt 0 ]]; then
+    suspend_helmreleases "${namespace}" "${jcr_dependent_releases[@]}"
+    trap "resume_helmreleases ${namespace} ${jcr_dependent_releases[*]:-} || true; cleanup_terminal" EXIT
   fi
 
   # Ensure the internal chart repository is ready before the JCR registry (artifactory-jcr).
@@ -109,8 +109,8 @@ deploy() {
   # Resume dependent releases after artifactory-jcr is ready and the
   # helm-chart-oci-publish pipeline succeeded so that dependents that
   # pull their Helm charts from artifactory-jcr can pull them successfully.
-  if [[ ${#addons[@]} -gt 0 ]]; then
-    resume_helmreleases "${namespace}" "${addons[@]}"
+  if [[ ${#jcr_dependent_releases[@]} -gt 0 ]]; then
+    resume_helmreleases "${namespace}" "${jcr_dependent_releases[@]}"
   fi
 
   # Ensure the OSS release is functionally ready if it is deployed in this
