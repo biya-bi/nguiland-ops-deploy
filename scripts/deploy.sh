@@ -132,6 +132,9 @@ deploy() {
   # Ensure the optional-git-repositories kustomization is ready.
   ensure_kustomization_ready "${namespace}" "optional-git-repositories" "15m" "true"
 
+  # Ensure the projects kustomization is ready.
+  ensure_kustomization_ready "${namespace}" "projects" "15m" "true"
+
   if [[ "$port_forward_enabled" == "true" ]]; then
     "${scripts_dir}/port-forward.sh" "${namespace}"
   fi

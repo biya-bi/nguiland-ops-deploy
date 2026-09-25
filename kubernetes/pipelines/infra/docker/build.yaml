@@ -9,7 +9,7 @@ spec:
     - name: flux-gitrepo-namespace
       value: ${ENVIRONMENT}
     - name: flux-gitrepo-name
-      value: docker
+      value: nguiland-ops-docker
     - name: context-dir
       value: .
     - name: always-build
