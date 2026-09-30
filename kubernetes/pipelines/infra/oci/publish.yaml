@@ -9,7 +9,7 @@ spec:
     - name: namespace
       value: ${ENVIRONMENT}
     - name: repository
-      value: helm
+      value: nguiland-ops-helm
     - name: charts-dir
       value: addons
     - name: excluded-charts

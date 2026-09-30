@@ -44,7 +44,7 @@ deploy() {
   local jcr_release_name="artifactory-jcr"
   local oss_release_name="artifactory-oss"
   local postgres_release_name="postgres"
-  local chart_git_repo_name="helm"
+  local chart_git_repo_name="nguiland-ops-helm"
   local chart_repo_release_name="chart-repository"
   local chart_repo_source_name="chart-repository"
 
