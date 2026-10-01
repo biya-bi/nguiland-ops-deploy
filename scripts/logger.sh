@@ -8,7 +8,7 @@ GREEN='\033[0;32m'
 CYAN='\033[0;36m'
 NO_COLOR='\033[0m'
 
-log() {
+logger::log() {
   local level_color="$1"
   local level_name="$2"
   local message="$3"
@@ -21,23 +21,23 @@ log() {
   printf "${timestamp} ${level_color}${level_name}${NO_COLOR} ${message}${nl}"
 }
 
-log_debug() {
-  log "${CYAN}" "DEBUG" "$1" "${2:-true}" >&2
+logger::debug() {
+  logger::log "${CYAN}" "DEBUG" "$1" "${2:-true}" >&2
 }
 
-log_info() {
-  log "${GREEN}" "INFO" "$1" "${2:-true}"
+logger::info() {
+  logger::log "${GREEN}" "INFO" "$1" "${2:-true}"
 }
 
-log_warn() {
-  log "${YELLOW}" "WARN" "$1" "${2:-true}" >&2
+logger::warn() {
+  logger::log "${YELLOW}" "WARN" "$1" "${2:-true}" >&2
 }
 
-log_error() {
-  log "${RED}" "ERROR" "$1" "${2:-true}" >&2
+logger::error() {
+  logger::log "${RED}" "ERROR" "$1" "${2:-true}" >&2
 }
 
-rotate_log_file() {
+logger::rotate_log_file() {
   local log_file="$1"
   local backup_file="${2:-${log_file}.old}"
 

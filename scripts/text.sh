@@ -6,7 +6,7 @@ scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 . "${scripts_dir}/logger.sh"
 
-replace_placeholder() {
+text::replace_placeholder() {
   local name=""
   local value=""
   local template_path=""
@@ -27,12 +27,12 @@ replace_placeholder() {
   done
 
   if [[ -z "${name}" || -z "${value}" || -z "${template_path}" ]]; then
-    log_error "Missing required arguments.\nUsage: replace_placeholder -n <NAME> -v <VALUE> -p <PATH> [-i]"
+    logger::error "Missing required arguments.\nUsage: text::replace_placeholder -n <NAME> -v <VALUE> -p <PATH> [-i]"
     return 1
   fi
 
   if [[ ! -f "${template_path}" ]]; then
-    log_error "Template file not found: ${template_path}"
+    logger::error "Template file not found: ${template_path}"
     return 1
   fi
 
@@ -46,7 +46,7 @@ replace_placeholder() {
   if [[ "${inplace}" == "true" ]]; then
     cat "${output_path}" > "${template_path}"
     rm -f "${output_path}"
-    log_info "Placeholder ${name} replaced in-place in ${template_path}"
+    logger::info "Placeholder ${name} replaced in-place in ${template_path}"
   else
     printf "%s\n" "${output_path}"
   fi

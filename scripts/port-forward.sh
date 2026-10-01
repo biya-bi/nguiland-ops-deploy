@@ -23,7 +23,7 @@ scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 port_forward_mappings=()
 
-set_port_forward_mappings() {
+port_forward::set_mappings() {
     local namespace="$1"
 
     port_forward_mappings=(
@@ -33,7 +33,7 @@ set_port_forward_mappings() {
     )
 }
 
-enable_port_forward() {
+port_forward::enable() {
   local environment="$1"
 
   local port_forward_enabled
@@ -50,8 +50,8 @@ enable_port_forward() {
   fi
 
   if [[ -n "$port_forward_enabled" ]]; then
-    log_warn "The '$NGUILAND_ENABLE_PORT_FORWARD' value specified for NGUILAND_ENABLE_PORT_FORWARD is not valid."
-    log_warn "Consider setting NGUILAND_ENABLE_PORT_FORWARD to 'true' or 'false' for explicit control."
+    logger::warn "The '$NGUILAND_ENABLE_PORT_FORWARD' value specified for NGUILAND_ENABLE_PORT_FORWARD is not valid."
+    logger::warn "Consider setting NGUILAND_ENABLE_PORT_FORWARD to 'true' or 'false' for explicit control."
     return 1
   fi
 
@@ -62,21 +62,21 @@ enable_port_forward() {
 
   if [[ "$env" =~ ^(local|int)$ ]]; then
     # Port forwarding enabled due to environment.
-    log_warn "NGUILAND_ENABLE_PORT_FORWARD is not explicitly set. Port forwarding is enabled for environment '$environment'."
+    logger::warn "NGUILAND_ENABLE_PORT_FORWARD is not explicitly set. Port forwarding is enabled for environment '$environment'."
     return 0
   else
-    log_debug "NGUILAND_ENABLE_PORT_FORWARD is not explicitly set. Port forwarding is disabled for environment '$environment'."
-    log_debug "Consider setting NGUILAND_ENABLE_PORT_FORWARD to 'true' or 'false' for explicit control."
+    logger::debug "NGUILAND_ENABLE_PORT_FORWARD is not explicitly set. Port forwarding is disabled for environment '$environment'."
+    logger::debug "Consider setting NGUILAND_ENABLE_PORT_FORWARD to 'true' or 'false' for explicit control."
     return 1
   fi
 }
 
-get_port_forward_mapping() {
+port_forward::get_mapping() {
   local target_service_name="$1"
   local target_namespace="$2"
 
   if [[ ${#port_forward_mappings[@]} -eq 0 ]]; then
-    set_port_forward_mappings "${target_namespace}"
+    port_forward::set_mappings "${target_namespace}"
   fi
 
   local mapping
@@ -95,7 +95,7 @@ get_port_forward_mapping() {
   return 1
 }
 
-get_host_name() {
+port_forward::get_host_name() {
   local host_address="$1"
   local host_name=""
 
@@ -118,24 +118,24 @@ get_host_name() {
   echo "${host_name:-$host_address}"
 }
 
-start_port_forward_by_name() {
+port_forward::start_by_name() {
   local host_address="$1"
   local service_name="$2"
   local namespace="$3"
 
   local mapping
-  mapping=$(get_port_forward_mapping "${service_name}" "${namespace}") || {
-    log_warn "No port forward mapping found for service '${service_name}' in namespace '${namespace}'. Skipping..."
+  mapping=$(port_forward::get_mapping "${service_name}" "${namespace}") || {
+    logger::warn "No port forward mapping found for service '${service_name}' in namespace '${namespace}'. Skipping..."
     return 1
   }
 
   local host_port
   IFS=: read -r host_port service_name namespace <<< "${mapping}"
 
-  start_single_port_forward "${host_address}" "${host_port}" "${service_name}" "${namespace}"
+  port_forward::start_single "${host_address}" "${host_port}" "${service_name}" "${namespace}"
 }
 
-start_single_port_forward() {
+port_forward::start_single() {
   local host_address="$1"
   local host_port="$2"
   local service_name="$3"
@@ -143,7 +143,7 @@ start_single_port_forward() {
 
   # Get hostname for more descriptive logging
   local host_name
-  host_name=$(get_host_name "$host_address")
+  host_name=$(port_forward::get_host_name "$host_address")
 
   # Construct display string to avoid "name (name)" redundancy
   local host_display="${host_name}"
@@ -155,21 +155,21 @@ start_single_port_forward() {
     # Check if the HTTP service is actually responding
     # We use -L to follow redirects and --max-time to keep it snappy
     if ! curl -sL --max-time 3 "http://${host_address}:${host_port}" > /dev/null; then
-        log_warn "Port ${host_port} is listening on ${host_display} but service is unresponsive (Tunnel Timeout). Cleaning up..."
+        logger::warn "Port ${host_port} is listening on ${host_display} but service is unresponsive (Tunnel Timeout). Cleaning up..."
         local pids
         pids=$(lsof -tni @"$host_address":"$host_port" -sTCP:LISTEN || true)
         [[ -n "$pids" ]] && kill -9 $pids 2>/dev/null || true
-        log_info "Restarting port-forward on ${host_address}:${host_port}..."
+        logger::info "Restarting port-forward on ${host_address}:${host_port}..."
     else
-      log_info "Port ${host_port} on ${host_display} is active and healthy."
+      logger::info "Port ${host_port} on ${host_display} is active and healthy."
       return 0
     fi
   else
-    log_info "Port ${host_port} on ${host_display} is free. Starting port-forward..."
+    logger::info "Port ${host_port} on ${host_display} is free. Starting port-forward..."
   fi
 
   if ! kubectl get svc "${service_name}" -n "${namespace}" >/dev/null 2>&1; then
-    log_warn "Service '${service_name}' not found in namespace '${namespace}'. Skipping..."
+    logger::warn "Service '${service_name}' not found in namespace '${namespace}'. Skipping..."
     return 0
   fi
 
@@ -181,13 +181,13 @@ start_single_port_forward() {
   # Wait a moment for the background process to initialize and bind to the port
   sleep 5
   if lsof -Pi @"$host_address":"$host_port" -sTCP:LISTEN -t >/dev/null 2>&1; then
-    log_info "Port forwarded, ${host_display}:${host_port} -> svc/${service_name}:${service_port} (${namespace})"
+    logger::info "Port forwarded, ${host_display}:${host_port} -> svc/${service_name}:${service_port} (${namespace})"
   else
-    log_warn "Background process started but ${host_address}:${host_port} is not listening. Forwarding might have failed."
+    logger::warn "Background process started but ${host_address}:${host_port} is not listening. Forwarding might have failed."
   fi
 }
 
-start_port_forwards() {
+port_forward::start_all() {
   local host_address="$1"
   local mapping
   local host_port
@@ -196,11 +196,11 @@ start_port_forwards() {
   for mapping in "${port_forward_mappings[@]}"; do
     IFS=: read -r host_port service_name namespace <<< "${mapping}"
 
-    start_single_port_forward "${host_address}" "${host_port}" "${service_name}" "${namespace}"
+    port_forward::start_single "${host_address}" "${host_port}" "${service_name}" "${namespace}"
   done
 }
 
-watch_port_forwards() {
+port_forward::watch() {
   local host_address="$1"
   local log_file="$2"
 
@@ -217,21 +217,21 @@ watch_port_forwards() {
     # 2. ROTATE every 1 hour (3600 seconds) regardless of recent writes
     if (( current_time - last_rotation >= 3600 )); then
       if [[ -s "${log_file}" ]]; then
-        log_info "1 hour elapsed since last rotation. Rotating..."
+        logger::info "1 hour elapsed since last rotation. Rotating..."
 
-        rotate_log_file "${log_file}"
+        logger::rotate_log_file "${log_file}"
 
         # Reset the timer
         last_rotation=$current_time
       fi
     fi
 
-    start_port_forwards "$host_address"
+    port_forward::start_all "$host_address"
     sleep 10
   done
 }
 
-# Direct-execution guard: only invoke start_port_forwards when this script is executed directly,
+# Direct-execution guard: only invoke port_forward::start_all when this script is executed directly,
 # not when it is sourced into another shell.
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   if [[ "${1:-}" == "--no-detach" ]]; then
@@ -246,7 +246,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   previous_pids=$(pgrep -f "$(basename "$0")" | grep -v "^$$" || echo "")
 
   if [[ -n "$previous_pids" ]]; then
-    log_warn "Found existing watchdog process(es): ${previous_pids}. Terminating..."
+    logger::warn "Found existing watchdog process(es): ${previous_pids}. Terminating..."
     kill -9 $previous_pids 2>/dev/null || true
     sleep 1
   fi
@@ -255,20 +255,20 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
   # 2. Log Rotation: Keep only one previous version
   if [[ -f "$log_file" && -s "$log_file" ]]; then
-    rotated_log_file=$(rotate_log_file "${log_file}")
-    log_info "Rotated previous log file to ${rotated_log_file}"
+    rotated_log_file=$(logger::rotate_log_file "${log_file}")
+    logger::info "Rotated previous log file to ${rotated_log_file}"
   fi
 
   # 3. Check if a 'nohup' flag was passed
   if [[ "${detach_mode}" == "true" ]]; then
-    log_info "Detaching and running in background..."
+    logger::info "Detaching and running in background..."
     nohup "$0" --no-detach "${namespace}" >> "$log_file" 2>&1 &
     exit 0
   fi
 
-  set_port_forward_mappings "${namespace}"
+  port_forward::set_mappings "${namespace}"
 
   host_address="${NGUILAND_PORT_FORWARD_ADDRESS:-localhost}"
 
-  watch_port_forwards "$host_address" "$log_file"
+  port_forward::watch "$host_address" "$log_file"
 fi

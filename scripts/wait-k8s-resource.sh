@@ -6,7 +6,7 @@ scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${scripts_dir}/logger.sh"
 
 # Convert a duration string into seconds.
-timeout_to_seconds() {
+wait_k8s_resource::timeout_to_seconds() {
   local timeout="${1}"
 
   if [[ "${timeout}" =~ ^([0-9]+)s$ ]]; then
@@ -22,7 +22,7 @@ timeout_to_seconds() {
   fi
 }
 
-get_wait_message() {
+wait_k8s_resource::get_wait_message() {
   local resource_type="$1"
   local resource_name="$2"
   local condition="$3"
@@ -46,7 +46,7 @@ get_wait_message() {
   fi
 }
 
-check_helmrelease_terminal_failure() {
+wait_k8s_resource::check_helmrelease_terminal_failure() {
   local namespace="$1"
   local resource_name="$2"
 
@@ -57,13 +57,13 @@ check_helmrelease_terminal_failure() {
 
   if [[ "${hr_reason}" == "ArtifactFailed" || "${hr_reason}" == "ChartPullFailed" ]]; then
     printf "\n"
-    log_error "helmrelease/${resource_name} failed terminal check: ${hr_reason}. Check 'kubectl describe helmrelease ${resource_name} -n ${namespace}'"
+    logger::error "helmrelease/${resource_name} failed terminal check: ${hr_reason}. Check 'kubectl describe helmrelease ${resource_name} -n ${namespace}'"
     return 1
   fi
   return 0
 }
 
-check_workload_terminal_failure() {
+wait_k8s_resource::check_workload_terminal_failure() {
   local namespace="$1"
   local resource_type="$2"
   local resource_name="$3"
@@ -73,14 +73,14 @@ check_workload_terminal_failure() {
 
   if echo "${status_json}" | jq -e '.status.containerStatuses[]? | select(.state.waiting.reason == "CrashLoopBackOff" or .state.waiting.reason == "Error")' >/dev/null 2>&1; then
     printf "\n"
-    log_error "${resource_type}/${resource_name} entered a terminal failure state (CrashLoopBackOff/Error)."
+    logger::error "${resource_type}/${resource_name} entered a terminal failure state (CrashLoopBackOff/Error)."
     kubectl logs -n "${namespace}" "${resource_type}/${resource_name}" --all-containers --tail=20 || true
     return 1
   fi
   return 0
 }
 
-wait_for_resource() {
+wait_k8s_resource::wait_for_resource() {
   local namespace="$1"
   local resource_type="$2"
   local resource_name="$3"
@@ -96,16 +96,16 @@ wait_for_resource() {
   fi
 
   local timeout_in_seconds
-  timeout_in_seconds=$(timeout_to_seconds "${timeout}")
+  timeout_in_seconds=$(wait_k8s_resource::timeout_to_seconds "${timeout}")
   local deadline
   deadline=$(($(date +%s) + timeout_in_seconds))
   local dots=0
   local dot_states=("   " ".  " ".. " "...")
 
   local message
-  message=$(get_wait_message "${resource_type}" "${resource_name}" "${condition}" "${namespace}")
+  message=$(wait_k8s_resource::get_wait_message "${resource_type}" "${resource_name}" "${condition}" "${namespace}")
   trap 'printf "\033[?25h"' RETURN
-  log_info "${message} " false
+  logger::info "${message} " false
   printf '\033[?25l'
 
   while true; do
@@ -124,14 +124,14 @@ wait_for_resource() {
 
     # Fail-fast: Check for terminal Flux errors
     if [[ "${resource_type}" == "helmrelease" ]]; then
-      if ! check_helmrelease_terminal_failure "${namespace}" "${resource_name}"; then
+      if ! wait_k8s_resource::check_helmrelease_terminal_failure "${namespace}" "${resource_name}"; then
         return 1
       fi
     fi
 
     # Fail-fast: Check if the pod is in a bad state
     if [[ "${resource_type}" == "deployment" || "${resource_type}" == "pod" ]]; then
-      if ! check_workload_terminal_failure "${namespace}" "${resource_type}" "${resource_name}"; then
+      if ! wait_k8s_resource::check_workload_terminal_failure "${namespace}" "${resource_type}" "${resource_name}"; then
         return 1
       fi
     fi
@@ -154,6 +154,6 @@ wait_for_resource() {
   done
 }
 
-wait_for_deployment_available() {
-  wait_for_resource "${1}" "deployment" "${2}" "condition=Available" "${3:-10m}"
+wait_k8s_resource::wait_for_deployment_available() {
+  wait_k8s_resource::wait_for_resource "${1}" "deployment" "${2}" "condition=Available" "${3:-10m}"
 }

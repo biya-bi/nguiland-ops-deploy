@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Portable yq in-place edit function to handle both mikefarah/yq (Go) and kislyuk/yq (Python)
-yq_i() {
+yq::edit() {
   local expression="$1"
   local file="$2"
 
@@ -15,7 +15,7 @@ yq_i() {
 }
 
 # Portable yq read function to handle both mikefarah/yq (Go) and kislyuk/yq (Python)
-yq_r() {
+yq::read() {
   local expression="$1"
   local file="$2"
 
