@@ -24,6 +24,19 @@ cleanup_terminal() {
 trap cleanup_terminal EXIT
 trap 'exit 130' INT
 
+reconcile_git_event_listener_chart() {
+  local namespace="${1}"
+  local release_name="git-event-listener"
+
+  if ! kubectl get helmrelease "${release_name}" -n "${namespace}" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  local chart_name="${namespace}-${release_name}"
+  wait_for_helmchart_exists "${namespace}" "${chart_name}" "1m"
+  reconcile_helm_chart "${namespace}" "${chart_name}"
+}
+
 deploy() {
   local environment="${1:-}"
   local namespace="${2:-}"
@@ -105,6 +118,7 @@ deploy() {
   run_oci_publish_pipeline "${namespace}" "${oci_publish_manifest_path}"
 
   wait_for_helmrepository_exists "${namespace}" "artifactory-oci" "10m"
+  reconcile_git_event_listener_chart "${namespace}"
 
   # Resume dependent releases after artifactory-jcr is ready and the
   # helm-chart-oci-publish pipeline succeeded so that dependents that

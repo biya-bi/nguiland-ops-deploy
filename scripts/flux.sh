@@ -22,6 +22,10 @@ wait_for_helmrelease_exists() {
   wait_for_resource "${1}" "helmrelease" "${2}" "exists" "${3:-10m}"
 }
 
+wait_for_helmchart_exists() {
+  wait_for_resource "${1}" "helmchart" "${2}" "exists" "${3:-10m}"
+}
+
 wait_for_helmrelease() {
   wait_for_resource "${1}" "helmrelease" "${2}" "condition=Ready" "${3:-5m}"
 }
@@ -58,6 +62,16 @@ reconcile_helm_release() {
 
 reconcile_helm_repository() {
   reconcile_resource "${1}" "helmrepository" "${2}"
+}
+
+reconcile_helm_chart() {
+  local namespace="${1}"
+  local chart_name="${2}"
+  local requested_at
+  requested_at=$(date +%s)
+
+  log_info "Triggering reconciliation signal for helmchart/${chart_name} in namespace ${namespace}"
+  kubectl annotate helmchart "${chart_name}" -n "${namespace}" "reconcile.fluxcd.io/requestedAt=${requested_at}" --overwrite >/dev/null
 }
 
 reconcile_git_repository() {
