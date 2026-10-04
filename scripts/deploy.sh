@@ -140,8 +140,8 @@ deploy::run() {
   # Ensure the nats kustomization is ready.
   flux::ensure_kustomization_ready "${namespace}" "nats" "15m" "true"
 
-  # Ensure the optional-streams kustomization is ready.
-  flux::ensure_kustomization_ready "${namespace}" "optional-streams" "15m" "true"
+  # Ensure the git-events kustomization is ready.
+  flux::ensure_kustomization_ready "${namespace}" "git-events" "15m" "true"
 
   # Ensure the optional-git-repositories kustomization is ready.
   flux::ensure_kustomization_ready "${namespace}" "optional-git-repositories" "15m" "true"
