@@ -3,11 +3,11 @@ kind: PipelineRun
 metadata:
   annotations: {}
   generateName: docker-build-run-
-  namespace: ${ENVIRONMENT}
+  namespace: cicd
 spec:
   params:
     - name: flux-gitrepo-namespace
-      value: ${ENVIRONMENT}
+      value: cicd
     - name: flux-gitrepo-name
       value: nguiland-ops-docker
     - name: context-dir
