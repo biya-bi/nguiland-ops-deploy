@@ -99,11 +99,13 @@ deploy::run() {
   pipeline_manifest_paths+=("${docker_build_manifest_path}")
   pipeline_manifest_paths+=("${oci_publish_manifest_path}")
 
+  local pipeline_namespace="cicd"
+
   local pipeline_name
   local relative_path
   for relative_path in "${pipeline_manifest_paths[@]}"; do
     pipeline_name=$(pipelines::get_pipeline_name "$relative_path")
-    pipelines::wait_for_pipeline_exists "${namespace}" "${pipeline_name}" "15m"
+    pipelines::wait_for_pipeline_exists "${pipeline_namespace}" "${pipeline_name}" "15m"
   done
 
   # Before running the docker-publish pipeline, we need to start a port-forward
@@ -114,8 +116,8 @@ deploy::run() {
     port_forward::start_by_name "${port_forward_address}" "${jcr_release_name}" "${namespace}"
   fi
 
-  pipelines::run_docker_build_pipeline "${namespace}" "${docker_build_manifest_path}"
-  pipelines::run_oci_publish_pipeline "${namespace}" "${oci_publish_manifest_path}"
+  pipelines::run_docker_build_pipeline "${namespace}" "${pipeline_namespace}" "${docker_build_manifest_path}"
+  pipelines::run_oci_publish_pipeline "${namespace}" "${pipeline_namespace}" "${oci_publish_manifest_path}"
 
   flux::wait_for_helmrepository_exists "${namespace}" "artifactory-oci" "10m"
   deploy::reconcile_git_event_listener_chart "${namespace}"

@@ -150,8 +150,9 @@ pipelines::wait_for_pipelinerun_completion() {
 
 pipelines::run_pipeline() {
   local namespace="${1}"
-  local relative_path="${2}"
-  local param_setter_func="${3:-}"
+  local pipeline_namespace="${2}"
+  local relative_path="${3}"
+  local param_setter_func="${4:-}"
 
   local manifest_path
   manifest_path=$(pipelines::copy_pipelinerun_manifest "${relative_path}")
@@ -170,19 +171,21 @@ pipelines::run_pipeline() {
   pipelinerun_name=$(kubectl create -f "${manifest_path}" -o jsonpath='{.metadata.name}')
   logger::info "Triggered PipelineRun ${pipelinerun_name}"
 
-  pipelines::wait_for_pipelinerun_completion "${namespace}" "${pipelinerun_name}" "1h"
+  pipelines::wait_for_pipelinerun_completion "${pipeline_namespace}" "${pipelinerun_name}" "1h"
 }
 
 pipelines::run_docker_build_pipeline() {
   local namespace="${1}"
-  local relative_path="${2}"
-  pipelines::run_pipeline "${namespace}" "${relative_path}" "pipelines::set_docker_build_pipeline_params"
+  local pipeline_namespace="${2}"
+  local relative_path="${3}"
+  pipelines::run_pipeline "${namespace}" "${pipeline_namespace}" "${relative_path}" "pipelines::set_docker_build_pipeline_params"
 }
 
 pipelines::run_oci_publish_pipeline() {
   local namespace="${1}"
-  local relative_path="${2}"
-  pipelines::run_pipeline "${namespace}" "${relative_path}" "pipelines::set_oci_publish_pipeline_params"
+  local pipeline_namespace="${2}"
+  local relative_path="${3}"
+  pipelines::run_pipeline "${namespace}" "${pipeline_namespace}" "${relative_path}" "pipelines::set_oci_publish_pipeline_params"
 }
 
 pipelines::get_pipeline_name() {
