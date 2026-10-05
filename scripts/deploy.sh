@@ -60,12 +60,12 @@ deploy::run() {
   local chart_git_repo_name="nguiland-ops-helm"
   local chart_repo_release_name="chart-repository"
   local chart_repo_source_name="chart-repository"
-  local pipeline_namespace="cicd"
+  local cicd_namespace="cicd"
 
   # Wait for the primary chart Git repository to be ready. This prevents 
   # race conditions where HelmReleases are reconciled before Flux has 
   # materialized the internal HelmChart proxy objects.
-  flux::ensure_git_repository_ready "${pipeline_namespace}" "${chart_git_repo_name}" "10m"
+  flux::ensure_git_repository_ready "${cicd_namespace}" "${chart_git_repo_name}" "10m"
 
   local jcr_dependent_releases=()
   local line
@@ -104,7 +104,7 @@ deploy::run() {
   local relative_path
   for relative_path in "${pipeline_manifest_paths[@]}"; do
     pipeline_name=$(pipelines::get_pipeline_name "$relative_path")
-    pipelines::wait_for_pipeline_exists "${pipeline_namespace}" "${pipeline_name}" "15m"
+    pipelines::wait_for_pipeline_exists "${cicd_namespace}" "${pipeline_name}" "15m"
   done
 
   # Before running the docker-publish pipeline, we need to start a port-forward
@@ -115,8 +115,8 @@ deploy::run() {
     port_forward::start_by_name "${port_forward_address}" "${jcr_release_name}" "${namespace}"
   fi
 
-  pipelines::run_docker_build_pipeline "${namespace}" "${pipeline_namespace}" "${docker_build_manifest_path}"
-  pipelines::run_oci_publish_pipeline "${namespace}" "${pipeline_namespace}" "${oci_publish_manifest_path}"
+  pipelines::run_docker_build_pipeline "${namespace}" "${cicd_namespace}" "${docker_build_manifest_path}"
+  pipelines::run_oci_publish_pipeline "${namespace}" "${cicd_namespace}" "${oci_publish_manifest_path}"
 
   flux::wait_for_helmrepository_exists "${namespace}" "artifactory-oci" "10m"
   deploy::reconcile_git_event_listener_chart "${namespace}"
