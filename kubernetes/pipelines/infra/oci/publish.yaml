@@ -3,11 +3,11 @@ kind: PipelineRun
 metadata:
   annotations: {}
   generateName: helm-chart-oci-publish-run-
-  namespace: ${ENVIRONMENT}
+  namespace: cicd
 spec:
   params:
     - name: namespace
-      value: ${ENVIRONMENT}
+      value: cicd
     - name: repository
       value: nguiland-ops-helm
     - name: charts-dir
