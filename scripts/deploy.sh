@@ -16,8 +16,8 @@ scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${scripts_dir}/pipelines.sh"
 . "${scripts_dir}/port-forward.sh"
 . "${scripts_dir}/flux.sh"
-. "${scripts_dir}/docker-desktop-registry.sh"
 . "${scripts_dir}/logger.sh"
+. "${scripts_dir}/cluster-provider.sh"
 
 deploy::cleanup_terminal() {
   printf '\033[?25h'
@@ -50,9 +50,7 @@ deploy::run() {
     exit 1
   fi
 
-  if [[ "$environment" == "local" ]]; then
-    desktop_registry::configure
-  fi
+  cluster_provider::configure "$environment"
 
   local port_forward_enabled=false
   if port_forward::enable "$environment"; then

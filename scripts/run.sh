@@ -77,6 +77,9 @@ run::bootstrap_flux() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  . "${scripts_dir}/cluster-provider.sh"
+
   cluster="${1}"
   branch="${2}"
 
@@ -85,13 +88,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   sops_age_namespace="${target_namespace}"
   owner="biya-bi"
   repository="nguiland-ops-flux"
-  scripts_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
   sops_age_key_file=$(echo "${SOPS_AGE_KEY_FILE:-}" | xargs)
 
-  if [[ "${cluster}" == "local" ]]; then
-    "${scripts_dir}/docker-desktop-registry.sh"
-  fi
+  cluster_provider::configure "${cluster}"
 
   run::create_sops_age_secret "${sops_age_namespace}" "${sops_age_key_file}"
   run::bootstrap_flux "${flux_namespace}" "${owner}" "${repository}" "${branch}" "${cluster}"

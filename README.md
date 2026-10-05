@@ -69,6 +69,8 @@ The local cluster uses `host.docker.internal:80` for Artifactory image pulls. Do
 
 The node-level setting is lost when Docker Desktop recreates the cluster.
 
+`NGUILAND_LOCAL_CLUSTER_PROVIDER` selects the provider for the `local` environment. It defaults to `docker_desktop`, which enables the setup above. Set it to another provider name to skip the Docker Desktop-specific setup; that provider still needs its own registry configuration. This setting is only used for the `local` environment, so provider-specific setup is never run for `dev`, `int`, or `prod`. `scripts/cluster-provider.sh` centralizes provider configuration and dispatches to the selected provider's setup.
+
 ## Artifactory
 ### Generating join and master keys
 Join and Master keys can be generated with the below command:
