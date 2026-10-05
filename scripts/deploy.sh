@@ -60,11 +60,12 @@ deploy::run() {
   local chart_git_repo_name="nguiland-ops-helm"
   local chart_repo_release_name="chart-repository"
   local chart_repo_source_name="chart-repository"
+  local pipeline_namespace="cicd"
 
   # Wait for the primary chart Git repository to be ready. This prevents 
   # race conditions where HelmReleases are reconciled before Flux has 
   # materialized the internal HelmChart proxy objects.
-  flux::ensure_git_repository_ready "${namespace}" "${chart_git_repo_name}" "10m"
+  flux::ensure_git_repository_ready "${pipeline_namespace}" "${chart_git_repo_name}" "10m"
 
   local jcr_dependent_releases=()
   local line
@@ -98,8 +99,6 @@ deploy::run() {
   local pipeline_manifest_paths=()
   pipeline_manifest_paths+=("${docker_build_manifest_path}")
   pipeline_manifest_paths+=("${oci_publish_manifest_path}")
-
-  local pipeline_namespace="cicd"
 
   local pipeline_name
   local relative_path
