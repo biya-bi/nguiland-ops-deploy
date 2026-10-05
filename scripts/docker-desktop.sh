@@ -5,7 +5,7 @@ set -euo pipefail
 scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${scripts_dir}/logger.sh"
 
-desktop_registry::configure() {
+docker_desktop::configure_registry() {
   local node_container="desktop-control-plane"
   if ! kubectl get node "${node_container}" >/dev/null 2>&1; then
     logger::error "Docker Desktop node '${node_container}' is not available in the current Kubernetes context."
@@ -39,6 +39,10 @@ desktop_registry::configure() {
   logger::info "Configured Docker Desktop image pulls to bypass its global registry mirror for Artifactory."
 }
 
+docker_desktop::configure() {
+  docker_desktop::configure_registry
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  desktop_registry::configure
+  docker_desktop::configure
 fi

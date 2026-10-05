@@ -16,8 +16,8 @@ cluster_provider::configure() {
     docker_desktop)
       local scripts_dir
       scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-      . "${scripts_dir}/docker-desktop-registry.sh"
-      desktop_registry::configure
+      . "${scripts_dir}/docker-desktop.sh"
+      docker_desktop::configure
       ;;
   esac
 }

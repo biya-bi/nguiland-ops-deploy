@@ -61,10 +61,10 @@ On the on-premises machine, the below entries should be added to the /etc/hosts 
 
 This setup was verified with Docker Desktop 4.93.0 using its kind-based Kubernetes cluster. It assumes the node is named `desktop-control-plane`, runs in a Docker container, and uses containerd with registry configuration under `/etc/containerd/certs.d`. A different Docker Desktop or Kubernetes provider version may use a different node layout or registry configuration and should be verified separately; providers other than Docker Desktop need their own setup rather than this helper.
 
-The local cluster uses `host.docker.internal:80` for Artifactory image pulls. Docker Desktop routes containerd pulls through its internal registry mirror, so `scripts/docker-desktop-registry.sh` installs a host-specific containerd route on the `desktop-control-plane` node. `scripts/deploy.sh local local` applies this automatically; run the helper after Docker Desktop recreates the Kubernetes node:
+The local cluster uses `host.docker.internal:80` for Artifactory image pulls. Docker Desktop routes containerd pulls through its internal registry mirror, so `scripts/docker-desktop.sh` installs a host-specific containerd route on the `desktop-control-plane` node. `scripts/deploy.sh local local` applies this automatically; run the helper after Docker Desktop recreates the Kubernetes node:
 
 ```bash
-./scripts/docker-desktop-registry.sh
+./scripts/docker-desktop.sh
 ```
 
 The node-level setting is lost when Docker Desktop recreates the cluster.
