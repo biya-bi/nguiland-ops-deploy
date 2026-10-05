@@ -65,8 +65,12 @@ deploy::run() {
   local chart_repo_source_name="chart-repository"
   local cicd_namespace="cicd"
 
-  # Wait for the primary chart Git repository to be ready. This prevents 
-  # race conditions where HelmReleases are reconciled before Flux has 
+  # The projects Kustomization creates the nguiland-ops-helm GitRepository,
+  # so wait for it before waiting for that repository to become Ready.
+  flux::ensure_kustomization_ready "${namespace}" "projects" "15m" "true"
+
+  # Wait for the primary chart Git repository to be ready. This prevents
+  # race conditions where HelmReleases are reconciled before Flux has
   # materialized the internal HelmChart proxy objects.
   flux::ensure_git_repository_ready "${cicd_namespace}" "${chart_git_repo_name}" "10m"
 
@@ -149,9 +153,6 @@ deploy::run() {
 
   # Ensure the optional-git-repositories kustomization is ready.
   flux::ensure_kustomization_ready "${namespace}" "optional-git-repositories" "15m" "true"
-
-  # Ensure the projects kustomization is ready.
-  flux::ensure_kustomization_ready "${namespace}" "projects" "15m" "true"
 
   if [[ "$port_forward_enabled" == "true" ]]; then
     "${scripts_dir}/port-forward.sh" "${namespace}"
