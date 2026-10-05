@@ -85,14 +85,18 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   sops_age_namespace="${target_namespace}"
   owner="biya-bi"
   repository="nguiland-ops-flux"
+  scripts_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
   sops_age_key_file=$(echo "${SOPS_AGE_KEY_FILE:-}" | xargs)
+
+  if [[ "${cluster}" == "local" ]]; then
+    "${scripts_dir}/docker-desktop-registry.sh"
+  fi
 
   run::create_sops_age_secret "${sops_age_namespace}" "${sops_age_key_file}"
   run::bootstrap_flux "${flux_namespace}" "${owner}" "${repository}" "${branch}" "${cluster}"
 
   # Invoke deploy.sh after run::bootstrap_flux completes.
   # The deploy.sh script is expected to live alongside this start script.
-  scripts_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
   "${scripts_dir}/deploy.sh" "${cluster}" "${target_namespace}"
 fi

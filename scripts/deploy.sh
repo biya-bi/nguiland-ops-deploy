@@ -16,6 +16,7 @@ scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${scripts_dir}/pipelines.sh"
 . "${scripts_dir}/port-forward.sh"
 . "${scripts_dir}/flux.sh"
+. "${scripts_dir}/docker-desktop-registry.sh"
 . "${scripts_dir}/logger.sh"
 
 deploy::cleanup_terminal() {
@@ -47,6 +48,10 @@ deploy::run() {
   if [ -z "$namespace" ]; then
     logger::error "namespace is required"
     exit 1
+  fi
+
+  if [[ "$environment" == "local" ]]; then
+    desktop_registry::configure
   fi
 
   local port_forward_enabled=false

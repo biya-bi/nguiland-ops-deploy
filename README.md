@@ -6,17 +6,18 @@
 	  - [Setting up Nginx on the cloud virtual machine](#nginx-on-the-cloud-virtual-machine).
 	  - [Adding host entries on the on-premises machine](#on-premises-host-entries).
 	  - [Setting up a kubernetes cluster on the on-premises machine](#kubernetes-on-premises).
-4. [Artifactory](#artifactory)
+4. [Docker Desktop local cluster](#docker-desktop-local-cluster)
+5. [Artifactory](#artifactory)
 	  - [Generating join and master keys](#generating-join-and-master-keys)
-5. [Pipelines](#pipelines)
-6. [Kubernetes Dashboard](#kubernetes-dashboard)
-7. [FluxCD UI](#fluxcd-ui)
-8. [Deleting pipeline runs](#deleting-pipeline-runs)
-9. [Removing unused Docker resources](#removing-unused-docker-resources)
-10. [Tekton](#tekton)
-11. [Logging in to GitHub Container Registry](#logging-in-to-github-container-registry)
-12. [Installing the Let's Encrypt certificate](#installing-the-lets-encrypt-certificate)
-13. [Scripts](#scripts)
+6. [Pipelines](#pipelines)
+7. [Kubernetes Dashboard](#kubernetes-dashboard)
+8. [FluxCD UI](#fluxcd-ui)
+9. [Deleting pipeline runs](#deleting-pipeline-runs)
+10. [Removing unused Docker resources](#removing-unused-docker-resources)
+11. [Tekton](#tekton)
+12. [Logging in to GitHub Container Registry](#logging-in-to-github-container-registry)
+13. [Installing the Let's Encrypt certificate](#installing-the-lets-encrypt-certificate)
+14. [Scripts](#scripts)
 
 ## Secret Encryption Setup
 Before bootstrapping or running `run.sh`, you need to prepare your encryption keys and environment.
@@ -56,12 +57,25 @@ On the on-premises machine, the below entries should be added to the /etc/hosts 
 3. After running `./scripts/run.sh int <branch_name>` on the server, do the following:
 	1. Use kubectl to expose services. The Wireguard client IP address should be used in port forwarding. For example, `kubectl port-forward svc/artifactory-jcr 9001:8082 -n infra --address=10.0.0.2`
 	2. Test artifactory-jcr and artifactory-oss port forwarding using the curl command. If the port forwarding loses connection to the pod after running the curl, restart the pods using a command similar to `kubectl rollout restart deployment <deployment_name> -n infra`, then test the curl again. If the curl now succeeds, stop kubectl port forwarding command for the given service and run step 1 again for the service in question.
+## Docker Desktop local cluster
+
+This setup was verified with Docker Desktop 4.93.0 using its kind-based Kubernetes cluster. It assumes the node is named `desktop-control-plane`, runs in a Docker container, and uses containerd with registry configuration under `/etc/containerd/certs.d`. A different Docker Desktop or Kubernetes provider version may use a different node layout or registry configuration and should be verified separately; providers other than Docker Desktop need their own setup rather than this helper.
+
+The local cluster uses `host.docker.internal:80` for Artifactory image pulls. Docker Desktop routes containerd pulls through its internal registry mirror, so `scripts/docker-desktop-registry.sh` installs a host-specific containerd route on the `desktop-control-plane` node. `scripts/deploy.sh local local` applies this automatically; run the helper after Docker Desktop recreates the Kubernetes node:
+
+```bash
+./scripts/docker-desktop-registry.sh
+```
+
+The node-level setting is lost when Docker Desktop recreates the cluster.
+
 ## Artifactory
 ### Generating join and master keys
 Join and Master keys can be generated with the below command:
 ```
 openssl rand -hex 32
 ```
+
 ## Pipelines
 The pipeline directory contains manifests that can be used to manually launch pipelines. This can be done using commands of the form `kubectl apply -f <manifest_path>`. Note that most pipeline runs have an environment parameter which may have to be changed (or commented out) to match on the environment on which the deployment is made.
 Ideally the pipelines should be run in the below order:
