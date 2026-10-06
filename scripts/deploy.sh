@@ -151,9 +151,6 @@ deploy::run() {
   # Ensure the git-events kustomization is ready.
   flux::ensure_kustomization_ready "${namespace}" "git-events" "15m" "true"
 
-  # Ensure the optional-git-repositories kustomization is ready.
-  flux::ensure_kustomization_ready "${namespace}" "optional-git-repositories" "15m" "true"
-
   if [[ "$port_forward_enabled" == "true" ]]; then
     "${scripts_dir}/port-forward.sh" "${namespace}"
   fi
