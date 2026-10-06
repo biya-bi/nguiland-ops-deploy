@@ -6,7 +6,7 @@ scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${scripts_dir}/logger.sh"
 
 docker_desktop::configure_registry() {
-  local node_container="desktop-control-plane"
+  local node_container="${NGUILAND_DOCKER_DESKTOP_NODE:-desktop-control-plane}"
   if ! kubectl get node "${node_container}" >/dev/null 2>&1; then
     logger::error "Docker Desktop node '${node_container}' is not available in the current Kubernetes context."
     return 1
