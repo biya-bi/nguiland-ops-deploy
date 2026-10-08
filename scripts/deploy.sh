@@ -122,8 +122,8 @@ deploy::run() {
     port_forward::start_by_name "${port_forward_address}" "${jcr_release_name}" "${namespace}"
   fi
 
- # Ensure the tekton-cicd kustomization is ready.
-  flux::ensure_kustomization_ready "${cicd_namespace}" "tekton-cicd" "15m" "true"
+  # Ensure the tekton-cicd kustomization is ready.
+  flux::ensure_kustomization_ready "${namespace}" "tekton-cicd" "15m" "true"
 
   pipelines::run_docker_build_pipeline "${namespace}" "${cicd_namespace}" "${docker_build_manifest_path}"
   pipelines::run_oci_publish_pipeline "${namespace}" "${cicd_namespace}" "${oci_publish_manifest_path}"
