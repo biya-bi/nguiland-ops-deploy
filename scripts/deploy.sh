@@ -122,6 +122,9 @@ deploy::run() {
     port_forward::start_by_name "${port_forward_address}" "${jcr_release_name}" "${namespace}"
   fi
 
+  # Ensure the tenant-resources kustomization is ready.
+  flux::ensure_kustomization_ready "${namespace}" "tenant-resources"
+
   # Ensure the tekton-cicd kustomization is ready.
   flux::ensure_kustomization_ready "${namespace}" "tekton-cicd" "15m" "true"
 
