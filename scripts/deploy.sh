@@ -67,7 +67,7 @@ deploy::run() {
 
   # The projects Kustomization creates the nguiland-ops-helm GitRepository,
   # so wait for it before waiting for that repository to become Ready.
-  flux::ensure_kustomization_ready "${namespace}" "projects" "15m" "true"
+  flux::ensure_kustomization_ready "${namespace}" "projects" "15m"
 
   # Wait for the primary chart Git repository to be ready. This prevents
   # race conditions where HelmReleases are reconciled before Flux has
@@ -122,9 +122,6 @@ deploy::run() {
     port_forward::start_by_name "${port_forward_address}" "${jcr_release_name}" "${namespace}"
   fi
 
-  # Ensure the tenant-resources kustomization is ready.
-  flux::ensure_kustomization_ready "${namespace}" "tenant-resources"
-
   # Ensure the tekton-cicd kustomization is ready.
   flux::ensure_kustomization_ready "${namespace}" "tekton-cicd" "15m" "true"
 
@@ -150,12 +147,6 @@ deploy::run() {
 
   # Ensure the common kustomization is ready.
   flux::ensure_kustomization_ready "${namespace}" "common"
-
-  # Ensure the nats kustomization is ready.
-  flux::ensure_kustomization_ready "${namespace}" "nats" "15m" "true"
-
-  # Ensure the git-events kustomization is ready.
-  flux::ensure_kustomization_ready "${namespace}" "git-events" "15m" "true"
 
   if [[ "$port_forward_enabled" == "true" ]]; then
     "${scripts_dir}/port-forward.sh" "${namespace}"
