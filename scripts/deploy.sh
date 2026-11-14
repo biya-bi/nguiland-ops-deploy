@@ -132,7 +132,7 @@ deploy::run() {
   pipelines::run_docker_build_pipeline "${namespace}" "${cicd_namespace}" "${docker_build_manifest_path}"
   pipelines::run_oci_publish_pipeline "${namespace}" "${cicd_namespace}" "${oci_publish_manifest_path}"
 
-  flux::wait_for_helmrepository_exists "${namespace}" "artifactory-oci" "10m"
+  flux::wait_for_helmrepository_exists "${namespace}" "oci-registry" "10m"
   deploy::reconcile_git_event_listener_chart "${namespace}"
 
   # Resume dependent releases after artifactory-jcr is ready and the

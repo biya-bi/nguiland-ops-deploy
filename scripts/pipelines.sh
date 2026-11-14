@@ -36,8 +36,8 @@ pipelines::copy_pipelinerun_manifest() {
   echo "${tmp_file}"
 }
 
-pipelines::get_artifactory_oci_resource() {
-  kubectl get helmrepository artifactory-oci -n "${1}" -o json 2>/dev/null || echo "{}"
+pipelines::get_oci_registry_resource() {
+  kubectl get helmrepository oci-registry -n "${1}" -o json 2>/dev/null || echo "{}"
 }
 
 pipelines::set_pipeline_param() {
@@ -101,7 +101,7 @@ pipelines::set_docker_build_pipeline_params() {
   pipelines::set_pipeline_param "always-build" "true" "${manifest_path}"
 
   local oci_res
-  oci_res=$(pipelines::get_artifactory_oci_resource "${namespace}")
+  oci_res=$(pipelines::get_oci_registry_resource "${namespace}")
   local skip_tls
   skip_tls=$(echo "${oci_res}" | jq -r 'if .spec.insecure == true then "true" else "false" end')
 
@@ -118,7 +118,7 @@ pipelines::set_oci_publish_pipeline_params() {
   fi
 
   local oci_res
-  oci_res=$(pipelines::get_artifactory_oci_resource "${namespace}")
+  oci_res=$(pipelines::get_oci_registry_resource "${namespace}")
   local skip_tls
   skip_tls=$(echo "${oci_res}" | jq -r 'if .spec.insecure == true then "true" else "false" end')
   local registry_url
