@@ -65,9 +65,13 @@ deploy::run() {
   local chart_repo_source_name="chart-repository"
   local cicd_namespace="cicd"
 
-  # The projects Kustomization creates the nguiland-ops-helm GitRepository,
-  # so wait for it before waiting for that repository to become Ready.
+  # The projects Kustomization brings in project related resources,
+  # so wait for it before proceeding.
   flux::ensure_kustomization_ready "${namespace}" "projects" "15m"
+
+  # The cicd Kustomization creates the nguiland-ops-helm GitRepository,
+  # so wait for it before waiting for that repository to become Ready.
+  flux::ensure_kustomization_ready "${namespace}" "cicd" "15m"
 
   # Wait for the primary chart Git repository to be ready. This prevents
   # race conditions where HelmReleases are reconciled before Flux has
