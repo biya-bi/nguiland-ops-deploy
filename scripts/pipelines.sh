@@ -71,7 +71,7 @@ pipelines::get_image_push_endpoint() {
 
 pipelines::get_normalized_registry_url() {
   local registry_url="${1}"
-  local registry_suffix="org.nguiland.infra"
+  local registry_suffix="charts/nguiland"
   local normalized_url="${registry_url%/}"
 
   if [[ "${normalized_url}" != "${registry_suffix}" && "${normalized_url}" != */${registry_suffix} ]]; then
