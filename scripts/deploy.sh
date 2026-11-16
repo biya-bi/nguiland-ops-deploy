@@ -104,6 +104,10 @@ deploy::run() {
   # Ensure the registry is functionally ready to receive image and OCI pushes.
   flux::ensure_helm_release_ready "${namespace}" "${jcr_release_name}" "15m"
 
+  # The tekton-cicd Kustomization creates the Tekton resources,
+  # so wait for it before working with Tekton pipelines.
+  flux::ensure_kustomization_ready "${namespace}" "tekton-cicd" "15m" "true"
+
   local docker_build_manifest_path="infra/docker/build.yaml"
   local oci_publish_manifest_path="infra/oci/publish.yaml"
 
@@ -125,9 +129,6 @@ deploy::run() {
     local port_forward_address="${NGUILAND_PORT_FORWARD_ADDRESS:-localhost}"
     port_forward::start_by_name "${port_forward_address}" "${jcr_release_name}" "${namespace}"
   fi
-
-  # Ensure the tekton-cicd kustomization is ready.
-  flux::ensure_kustomization_ready "${namespace}" "tekton-cicd" "15m" "true"
 
   pipelines::run_docker_build_pipeline "${namespace}" "${cicd_namespace}" "${docker_build_manifest_path}"
   pipelines::run_oci_publish_pipeline "${namespace}" "${cicd_namespace}" "${oci_publish_manifest_path}"
